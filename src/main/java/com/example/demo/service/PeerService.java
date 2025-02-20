@@ -1,37 +1,127 @@
 package com.example.demo.service;
 
-import com.example.demo.models.Filter;
+import com.example.demo.models.Campus;
+import com.example.demo.models.Peer;
+import com.example.demo.models.exception.BadRequestException;
+import com.example.demo.repository.CampuseRepository;
+import com.example.demo.repository.PeerRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.ArrayList;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.List;
+import java.util.Map;
+
 
 @Service
 @RequiredArgsConstructor
 public class PeerService {
-    private final WebClient.Builder webClient;
+    private final PeerRepository peerRepository;
+    private final CampuseRepository campuseRepository;
+    private final Logger logger = LoggerFactory.getLogger(PeerService.class);
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private String url = "https://edu-api.21-school.ru/services/21-school/api/v1";
-    private String accessToken = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ5V29landCTmxROWtQVEpFZnFpVzRrc181Mk1KTWkwUHl2RHNKNlgzdlFZIn0.eyJleHAiOjE3MzQ1NjQwODMsImlhdCI6MTczNDUyODA4MywiYXV0aF90aW1lIjoxNzM0NTI4MDgzLCJqdGkiOiJmZWExNjFkOS1kY2JiLTQ1ODEtOWVlNy1lZTE5N2UxNjFjMzYiLCJpc3MiOiJodHRwczovL2F1dGguc2JlcmNsYXNzLnJ1L2F1dGgvcmVhbG1zL0VkdVBvd2VyS2V5Y2xvYWsiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiNTJkYzRmYTQtOTYyYy00OGI4LWJiYmMtOGUzOWRlODY5MTY3IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoic2Nob29sMjEiLCJub25jZSI6IjJiYWI5ZDU5LTI0Y2UtNDdmZC04YmU3LTJlNzZjZDg3MDVkZiIsInNlc3Npb25fc3RhdGUiOiI5ZWNjYTI3MC03NjE4LTQyZWItOTQ5OS04YjA1MDg5ODkwNTciLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHBzOi8vZWR1LjIxLXNjaG9vbC5ydSIsImh0dHBzOi8vZWR1LWFkbWluLjIxLXNjaG9vbC5ydSJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1lZHVwb3dlcmtleWNsb2FrIiwib2ZmbGluZV9hY2Nlc3MiLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoib3BlbmlkIHByb2ZpbGUgZW1haWwiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwidXNlcl9pZCI6IjlmNDI5NjVlLTMxZTQtNGE3MS1iMzZiLTVjNWJjMDYxYjU5ZSIsIm5hbWUiOiJNYWN5IEdhYnJpZWxsZSIsImF1dGhfdHlwZV9jb2RlIjoiZGVmYXVsdCIsInByZWZlcnJlZF91c2VybmFtZSI6Im1hY3lnYWJyIiwiZ2l2ZW5fbmFtZSI6Ik1hY3kiLCJmYW1pbHlfbmFtZSI6IkdhYnJpZWxsZSIsImVtYWlsIjoibWFjeWdhYnJAc3R1ZGVudC4yMS1zY2hvb2wucnUifQ.qwn1I8CIyWPch7tPVxudG-dIsFXTM99GKuoZDwxJKmCE4GXW6KvVomLNRYynSY8oBxjjQUqAyXd2gFrTrWWs5ElL8SCkTz7JUKulzbdcrwseh1Xv9ZRPk_X3IGp-Zod3RdqUqeZauAFPGf3A1yxGX4ytWaMZ-VtgXlgGf_IUAIfgQAtRpMD_7u9FFxvo1Wn4QFuwV_kMw5S-I8omewt2BwbIz-YsTH29kL43eJCLO3yY8AfVv8vhU8rJRU3L9rxR5B61Gwc5vNMzup50G2Qprq9G6U2MyOaEm8TotivdpQh5fFt8tQVSPUK-_R_Mwv55Wpw0rd_Pn03IAKkE3jUufQ";
-    public String getPeers(Long page, Long size, String campusId, Filter filter) {
-        ArrayList<String> peers = new ArrayList<>();
-        String newUrl = url + "/campuses/"+ campusId + "/participants?limit="+ size +"&offset="+ page;
-        return createResponse(newUrl, accessToken);
+    @Value("${school.token.secret}")
+    private String token;
+
+    public void updatePeers() {
+        List<Campus> campuses = campuseRepository.findAll();
+        for (Campus campus : campuses) {
+            int i =0;
+            while(i<100) {
+                List<String> peersName = getPeersName(campus.getId(), 1000, 1000*i);
+                if(peersName.isEmpty()) break;
+                for (String peerName : peersName) {
+                    Peer peer;
+                    if(peerRepository.existsByLogin(peerName)) {
+                        peer = peerRepository.findByLogin(peerName);
+                    } else {
+                        peer = new Peer();
+                        peer.setLogin(peerName);
+                    }
+                    if(updateInfo(peer)){
+                        logger.info("Updated peer: " + peer);
+                        peerRepository.save(peer);
+                    }
+                }
+                i++;
+            }
+        }
     }
 
-    private String createResponse(String url, String accessToken) {
+    private Boolean updateInfo(Peer peer) {
+            try {
+                String url = "https://edu-api.21-school.ru/services/21-school/api/v1/participants/"+ peer.getLogin();
+                HttpClient client = HttpClient.newHttpClient();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(new URI(url))
+                        .header("Authorization", "Bearer "+ token)
+                        .GET()
+                        .build();
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                Peer newPeer = objectMapper.readValue(response.body() , Peer.class);
+                if(newPeer.equals(peer)) return true;
+                peer.setParallelName(newPeer.getParallelName());
+                peer.setClassName(newPeer.getClassName());
+                peer.setExpValue(newPeer.getExpValue());
+                peer.setLevel(newPeer.getLevel());
+                peer.setExpToNextLevel(newPeer.getExpToNextLevel());
+                peer.setStatus(newPeer.getStatus());
+                peer.setCampus(newPeer.getCampus());
+
+            } catch (Exception e) {
+                logger.error(e.getMessage());
+                throw new BadRequestException(e.getMessage());
+            }
+            return false;
+    }
+
+    private List<String> getPeersName(String campusId, Integer size, Integer page) {
+        Map<String, List<String>> responseMap;
+        HttpResponse<String> response;
         try {
-            return webClient.build()
-                    .get()
-                    .uri(url)
-                    .header("accept", "*/*")
-                    .header("Authorization", "Bearer " + accessToken)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
+            String url = "https://edu-api.21-school.ru/services/21-school/api/v1/campuses/"+ campusId+"/participants?limit="+size+"&offset="+page*size;
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI(url))
+                .header("Authorization", "Bearer "+ token)
+                .GET()
+                .build();
+
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            responseMap = objectMapper.readValue(response.body(), new TypeReference<>() {});
         } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch response from API: " + e.getMessage());
+            logger.error(e.getMessage());
+            throw new BadRequestException(e.getMessage());
         }
+        return responseMap.get("participants");
+    }
+
+    @Transactional
+    public String getPeers(String campusId, Integer size, Integer page) {
+        String peersJson;
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<Peer> peersPage = peerRepository.findByCampusId(campusId, pageable);
+            List<Peer> peers = peersPage.getContent();
+
+            peersJson = new ObjectMapper().writeValueAsString(peers);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            peersJson = e.getMessage();
+        }
+        return peersJson;
     }
 }

@@ -1,4 +1,0 @@
-export CONFIG_SERVER_USERNAME=macygabr
-export CONFIG_SERVER_PASSWORD=macygabr-the-best
-export CONFIG_SERVER_HOST=configserver-lrv7.onrender.com
-export SPRING_APPLICATION_NAME=s21school
