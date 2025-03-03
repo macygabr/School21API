@@ -21,6 +21,7 @@ public class PeerController {
     public void consumeMessage(ConsumerRecord<String, String> message) {
         String peersJson = "";
         try {
+            logger.info("Received message: " + message.value());
             RequestData requestData = new RequestData().readJson(message.value());
             peersJson = peerService.getPeers(requestData.getCampusId(), requestData.getSize(), requestData.getPage());
         } catch (Exception e) {
