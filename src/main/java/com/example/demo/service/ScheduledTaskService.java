@@ -11,12 +11,11 @@ import org.springframework.stereotype.Service;
 public class ScheduledTaskService {
 
     private final PeerService peerService;
-    private final CampuseService campuseService;
-    private final Logger logger = LoggerFactory.getLogger(ScheduledTaskService.class);
+    private final CampusService campusService;
 
     @Scheduled(fixedRate = 60000)
     public void runDailyTask() {
-        campuseService.updateCampuses();
+        campusService.updateCampuses();
         peerService.updatePeers();
     }
 }

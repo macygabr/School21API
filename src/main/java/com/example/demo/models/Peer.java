@@ -1,12 +1,15 @@
 package com.example.demo.models;
 
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Objects;
 
 @Data
 @Entity
+@NoArgsConstructor
 @Table(name = "peers")
 public class Peer {
     @Id
@@ -36,6 +39,10 @@ public class Peer {
 
     @Column(name = "status")
     private String status;
+
+    public Peer(String login) {
+        this.login = login;
+    }
 
     @Override
     public boolean equals(Object o) {
