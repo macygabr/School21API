@@ -1,7 +1,6 @@
 package com.example.demo.models;
 
 import jakarta.persistence.*;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -37,8 +36,9 @@ public class Peer {
     @ManyToOne
     private Campus campus;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private String status;
+    private Status status;
 
     public Peer(String login) {
         this.login = login;
@@ -48,7 +48,10 @@ public class Peer {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         Peer peer = (Peer) o;
-        return Objects.equals(login, peer.login) && Objects.equals(className, peer.className) && Objects.equals(parallelName, peer.parallelName) && Objects.equals(expValue, peer.expValue) && Objects.equals(level, peer.level) && Objects.equals(expToNextLevel, peer.expToNextLevel) && Objects.equals(campus, peer.campus) && Objects.equals(status, peer.status);
+        return Objects.equals(login, peer.login) && Objects.equals(className, peer.className) &&
+                Objects.equals(parallelName, peer.parallelName) && Objects.equals(expValue, peer.expValue) &&
+                Objects.equals(level, peer.level) && Objects.equals(expToNextLevel, peer.expToNextLevel) &&
+                Objects.equals(campus, peer.campus) && status == peer.status;
     }
 
     @Override

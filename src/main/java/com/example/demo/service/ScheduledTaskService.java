@@ -13,7 +13,7 @@ public class ScheduledTaskService {
     private final PeerService peerService;
     private final CampusService campusService;
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 24*60*60*1000)
     public void runDailyTask() {
         campusService.updateCampuses();
         peerService.updatePeers();

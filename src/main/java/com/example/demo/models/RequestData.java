@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RequestData {
@@ -11,6 +13,7 @@ public class RequestData {
     private String campusId;
     private Integer page;
     private String userId;
+    private List<Status> status;
 
     public RequestData readJson(String json) {
         try {
@@ -20,6 +23,7 @@ public class RequestData {
             this.campusId = requestData.getCampusId();
             this.page = requestData.getPage();
             this.userId = requestData.getUserId();
+            this.status = requestData.getStatus();
             return this;
         } catch (Exception e) {
             System.err.println("Ошибка при парсинге JSON: " + e.getMessage());

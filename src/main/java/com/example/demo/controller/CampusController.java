@@ -19,7 +19,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/campus")
+@RequestMapping("/api/v1/campus")
 @RequiredArgsConstructor
 @Tag(name = "Campus", description = "Контроллер для работы с кампусами")
 public class CampusController {
