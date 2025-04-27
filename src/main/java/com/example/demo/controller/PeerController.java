@@ -5,6 +5,7 @@ import com.example.demo.models.RequestData;
 import com.example.demo.models.Status;
 import com.example.demo.service.KafkaService;
 import com.example.demo.service.PeerService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.transaction.Transactional;
@@ -42,7 +43,10 @@ public class PeerController {
         try {
             log.info("Received Kafka message: {}", message.value());
             RequestData requestData = new RequestData().readJson(message.value());
-            peersJson = peerService.getPeers(requestData.getCampusId(), requestData.getSize(), requestData.getPage(), requestData.getStatus()).toString();
+            List<Peer> peers = peerService.getPeers(requestData.getCampusId(), requestData.getSize(), requestData.getPage(), requestData.getStatus());
+            ObjectMapper objectMapper = new ObjectMapper();
+            peersJson = objectMapper.writeValueAsString(peers);
+            log.info("Processed Kafka message: {}", peersJson);
         } catch (Exception e) {
             log.error("Error processing Kafka messages: {}", e.getMessage(), e);
             peersJson = String.format("{\"error\": \"Error processing Kafka messages\", \"details\": \"%s\"}", e.getMessage());
