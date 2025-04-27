@@ -46,7 +46,6 @@ public class PeerController {
             List<Peer> peers = peerService.getPeers(requestData.getCampusId(), requestData.getSize(), requestData.getPage(), requestData.getStatus());
             ObjectMapper objectMapper = new ObjectMapper();
             peersJson = objectMapper.writeValueAsString(peers);
-            log.info("Processed Kafka message: {}", peersJson);
         } catch (Exception e) {
             log.error("Error processing Kafka messages: {}", e.getMessage(), e);
             peersJson = String.format("{\"error\": \"Error processing Kafka messages\", \"details\": \"%s\"}", e.getMessage());
