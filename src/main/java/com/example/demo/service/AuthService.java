@@ -8,7 +8,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Service
 public class AuthService {
     @Getter
-    @Value("${accessToken}")
+    @Value("${school.token.secret}")
     private String accessToken;
 
 //    @Value("${refreshToken}")
