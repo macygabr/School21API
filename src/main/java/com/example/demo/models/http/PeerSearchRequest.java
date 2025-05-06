@@ -1,7 +1,7 @@
-package com.example.demo.models;
+package com.example.demo.models.http;
 
+import com.example.demo.models.dto.Status;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;

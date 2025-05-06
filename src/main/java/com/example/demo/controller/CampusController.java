@@ -1,16 +1,12 @@
 package com.example.demo.controller;
 
-import com.example.demo.models.Campus;
-import com.example.demo.models.RequestData;
+import com.example.demo.models.dto.Campus;
 import com.example.demo.service.CampusService;
-import com.example.demo.service.KafkaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.http.ResponseEntity;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

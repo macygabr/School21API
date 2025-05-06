@@ -1,11 +1,10 @@
-package com.example.demo.models;
+package com.example.demo.models.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -28,4 +27,13 @@ public class Campus {
     @OneToMany(mappedBy = "campus")
     @JsonIgnore
     private List<Peer> peers;
+
+    @Override
+    public String toString() {
+        return "Campus{" +
+                "id='" + id + '\'' +
+                ", shortName='" + shortName + '\'' +
+                ", fullName='" + fullName + '\'' +
+                '}';
+    }
 }

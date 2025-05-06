@@ -1,15 +1,12 @@
 package com.example.demo.repository;
 
-import com.example.demo.models.Campus;
-import com.example.demo.models.Peer;
-import com.example.demo.models.Status;
+import com.example.demo.models.dto.Peer;
+import com.example.demo.models.dto.Status;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

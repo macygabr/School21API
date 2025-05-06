@@ -1,5 +1,6 @@
-package com.example.demo.models;
+package com.example.demo.models.http;
 
+import com.example.demo.models.dto.Peer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;

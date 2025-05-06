@@ -1,26 +1,20 @@
 package com.example.demo.controller;
 
-import com.example.demo.models.*;
+import com.example.demo.models.dto.Status;
+import com.example.demo.models.http.PeerPageResponse;
+import com.example.demo.models.http.PeerSearchRequest;
 import com.example.demo.service.KafkaService;
 import com.example.demo.service.PeerService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -35,8 +29,8 @@ public class PeerController {
     @Operation(summary = "Получить список пиров", description = "Возвращает список пиров по фильтрам: campusId, statuses, peerName, page, size")
     public ResponseEntity<PeerPageResponse> getPeers(
             @RequestParam(defaultValue = "46e7d965-21e9-4936-bea9-f5ea0d1fddf2") String campusId,
-            @RequestParam(defaultValue = "ACTIVE", required = false) List<Status> statuses,
-            @RequestParam(defaultValue = "macygabr", required = false) String peerName,
+            @RequestParam(required = false) List<Status> statuses,
+            @RequestParam(required = false) String peerName,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
