@@ -47,3 +47,4 @@ logback-spring.xml
 node_modules/
 target
 logs
+aplication.properties
