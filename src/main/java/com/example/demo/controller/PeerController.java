@@ -56,11 +56,8 @@ public class PeerController {
             log.info("Received Kafka message: {}", message.value());
             PeerSearchRequest request = new PeerSearchRequest().readJson(message.value());
             PeerPageResponse response = peerService.searchPeers(request);
-
-            kafkaService.sendMessage(message.key(), new PeerPageResponse(
-                    response.getTotal(),
-                    response.getSize(),
-                    response.getPeers()).toString());
+            log.info("Processed Kafka message: {}", response);
+            kafkaService.sendMessage(message.key(), response.toString());
 
         } catch (Exception e) {
             log.error("Error processing Kafka message: {}", e.getMessage(), e);

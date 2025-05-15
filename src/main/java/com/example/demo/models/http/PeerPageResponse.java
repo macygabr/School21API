@@ -10,6 +10,8 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 public class PeerPageResponse {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private long total;
     private int size;
     private List<Peer> peers;
@@ -17,8 +19,8 @@ public class PeerPageResponse {
     @Override
     public String toString() {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.writeValueAsString(this);
+
+            return MAPPER.writeValueAsString(this);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Ошибка сериализации PeerPageResponse в JSON", e);
         }
