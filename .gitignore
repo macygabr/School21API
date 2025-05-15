@@ -42,9 +42,8 @@ gradle-app.setting
 
 ### My list ###
 hibernate.cfg.xml
-application.properties
+src/main/resources/application.properties
 logback-spring.xml
 node_modules/
 target
 logs
-aplication.properties
