@@ -41,8 +41,7 @@ gradle-app.setting
 .DS_Store
 
 ### My list ###
-hibernate.cfg.xml
-src/main/resources/application.properties
+resources
 logback-spring.xml
 node_modules/
 target
