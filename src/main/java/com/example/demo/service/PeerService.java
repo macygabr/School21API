@@ -57,6 +57,7 @@ public class PeerService {
     }
 
     public void updatePeers() {
+        log.info("Обновление пиров");
         campusRepository.findAll().forEach(campus -> {
             for (int page = 0; page < 1000; page++) {
                 try {
@@ -78,6 +79,7 @@ public class PeerService {
                 }
             }
         });
+        log.info("Обновление пиров завершено");
     }
 
     private Boolean updateInfo(Peer peer) {
@@ -92,6 +94,7 @@ public class PeerService {
             peer.setExpToNextLevel(newPeer.getExpToNextLevel());
             peer.setStatus(newPeer.getStatus());
             peer.setCampus(newPeer.getCampus());
+            log.info("Обновлена информация о пире: {}", peer);
         } catch (Exception e) {
             log.error("Ошибка при обновлении информации о пире: ", e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR , "Ошибка при обновлении информации о пире: " + e.getMessage());
