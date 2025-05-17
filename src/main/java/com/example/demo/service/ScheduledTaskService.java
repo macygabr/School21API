@@ -20,10 +20,4 @@ public class ScheduledTaskService {
         campusService.updateCampuses();
         peerService.updateAllPeers();
     }
-
-    @PostConstruct
-    public void init() {
-        campusService.updateCampuses();
-        peerService.updateAllPeers();
-    }
 }
