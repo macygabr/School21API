@@ -27,7 +27,7 @@ public class PeerApiClient {
     private WebClient buildClient() {
         return WebClient.builder()
                 .baseUrl("https://edu-api.21-school.ru/services/21-school/api/v1")
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + authService.getAccessToken())
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + authService.getValidAccessToken())
                 .clientConnector(
                         new ReactorClientHttpConnector(
                                 HttpClient.create()

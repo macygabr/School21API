@@ -4,8 +4,10 @@ import com.example.demo.models.dto.Campus;
 import com.example.demo.repository.CampusRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -26,6 +28,12 @@ public class CampusService {
 
     public List<Campus> getCampuses() {
         return campusRepository.findAll();
+    }
+
+    @PostConstruct
+    @Scheduled(cron = "0 0 0 * * *")
+    public void runDailyTask() {
+        updateCampuses();
     }
 
     public void updateCampuses() {
@@ -56,7 +64,7 @@ public class CampusService {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI(url))
-                .header("Authorization", "Bearer "+ authService.getAccessToken())
+                .header("Authorization", "Bearer "+ authService.getValidAccessToken())
                 .GET()
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());

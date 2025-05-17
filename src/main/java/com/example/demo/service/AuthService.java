@@ -1,44 +1,90 @@
 package com.example.demo.service;
 
-import lombok.Getter;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.Instant;
+
+@Slf4j
 @Service
 public class AuthService {
-    @Getter
-    @Value("${school.token.secret}")
-    private String accessToken;
-
-//    @Value("${refreshToken}")
+    private final WebClient webClient;
+    private final String clientId;
     private String refreshToken;
-//    @Value("${tokenUrl}")
-    private final String tokenUrl = "https://auth.sberclass.ru/auth/realms/EduPowerKeycloak/protocol/openid-connect";
+    private String accessToken;
+    private Instant expiresAt;
 
-//    @Value("${expiresInTime}")
-    private long accessTokenExpiryTime = 36000L;
-
-    private final WebClient webClient = WebClient.builder()
-            .baseUrl(tokenUrl)
-            .build();
-
-    public void updateTokens(String accessToken, String refreshToken, long expiresIn) {
-        this.accessToken = accessToken;
+    public AuthService(
+            @Value("${auth.token.url}") String tokenUrl,
+            @Value("${auth.client.id}") String clientId,
+            @Value("${auth.token.refresh}") String refreshToken
+    ) {
+        this.clientId = clientId;
         this.refreshToken = refreshToken;
-        this.accessTokenExpiryTime = System.currentTimeMillis() + (expiresIn * 1000L);
+        this.webClient = WebClient.builder().baseUrl(tokenUrl).build();
     }
-//
-//    public Mono<String> refreshAccessToken() {
-//        return webClient.post()
-//                .uri("/token")
-//                .header("Content-Type", "application/x-www-form-urlencoded")
-//                .bodyValue("grant_type=refresh_token&refresh_token=" + refreshToken)
-//                .retrieve()
-//                .bodyToMono(TokenResponse.class)
-//                .map(response -> {
-//                    updateTokens(response.getAccessToken(), response.getRefreshToken(), response.getExpiresIn());
-//                    return response.getAccessToken();
-//                });
-//    }
+
+    @PostConstruct
+    public void init() {
+        refreshAccessToken();
+    }
+
+    public synchronized String getValidAccessToken() {
+        if (accessToken == null || Instant.now().isAfter(expiresAt)) {
+            log.info("Access token отсутствует или просрочен. Обновляем через refresh_token...");
+            refreshAccessToken();
+        }
+        return accessToken;
+    }
+
+    private void refreshAccessToken() {
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("client_id", clientId);
+        form.add("grant_type", "refresh_token");
+        form.add("refresh_token", refreshToken);
+
+        try {
+            TokenResponse response = webClient.post()
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .bodyValue(form)
+                    .retrieve()
+                    .bodyToMono(TokenResponse.class)
+                    .block();
+
+            if (response != null) {
+                this.accessToken = response.getAccessToken();
+                this.refreshToken = response.getRefreshToken();
+                this.expiresAt = Instant.now().plusSeconds(response.getExpiresIn() - 30);
+                log.info("Обновлён access_token. Истекает в {}", expiresAt);
+            } else {
+                log.error("Пустой ответ при обновлении токена.");
+            }
+
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении токена: {}", e.getMessage());
+        }
+    }
+
+    private record TokenResponse(
+            String access_token,
+            String refresh_token,
+            long expires_in
+    ) {
+        public String getAccessToken() {
+            return access_token;
+        }
+
+        public String getRefreshToken() {
+            return refresh_token;
+        }
+
+        public long getExpiresIn() {
+            return expires_in;
+        }
+    }
 }

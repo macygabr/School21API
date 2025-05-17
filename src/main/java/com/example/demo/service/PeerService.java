@@ -5,6 +5,7 @@ import com.example.demo.models.http.PeerPageResponse;
 import com.example.demo.models.http.PeerSearchRequest;
 import com.example.demo.repository.CampusRepository;
 import com.example.demo.repository.PeerRepository;
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -14,6 +15,7 @@ import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -35,6 +37,12 @@ public class PeerService {
 
     private final static int MAX_SIZE_PAGES = 1000;
     private final static int MAX_COUNT_PAGES = 100;
+
+    @PostConstruct
+    @Scheduled(cron = "0 0 0 * * *")
+    public void runDailyTask() {
+        updateAllPeers();
+    }
 
     public void updateAllPeers() {
         log.info("Начато обновление пиров...");
@@ -111,6 +119,7 @@ public class PeerService {
         }
         return changed;
     }
+
 
     public PeerPageResponse searchPeers(PeerSearchRequest request) {
         log.info("Поиск пиров по запросу: {}", request);
