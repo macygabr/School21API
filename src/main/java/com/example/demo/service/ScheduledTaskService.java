@@ -18,12 +18,12 @@ public class ScheduledTaskService {
     @Scheduled(cron = "0 0 0 * * *")
     public void runDailyTask() {
         campusService.updateCampuses();
-        peerService.updatePeers();
+        peerService.updateAllPeers();
     }
 
     @PostConstruct
     public void init() {
         campusService.updateCampuses();
-        peerService.updatePeers();
+        peerService.updateAllPeers();
     }
 }

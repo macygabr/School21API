@@ -3,8 +3,6 @@ package com.example.demo.service;
 import com.example.demo.models.dto.Peer;
 import com.example.demo.models.http.PeerPageResponse;
 import com.example.demo.models.http.PeerSearchRequest;
-import com.example.demo.models.dto.Status;
-
 import com.example.demo.repository.CampusRepository;
 import com.example.demo.repository.PeerRepository;
 import jakarta.persistence.EntityManager;
@@ -13,139 +11,106 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import lombok.RequiredArgsConstructor;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.server.ResponseStatusException;
-import reactor.core.publisher.Mono;
-import reactor.util.retry.Retry;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class PeerService {
-    private final PeerRepository peerRepository;
-    private final CampusRepository campusRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    private final AuthService authService;
-    private final WebClient webClient;
+    private final PeerRepository peerRepository;
+    private final CampusRepository campusRepository;
+    private final PeerApiClient peerApiClient;
 
-    @Autowired
-    public  PeerService(PeerRepository peerRepository, CampusRepository campusRepository, AuthService authService) {
-        this.peerRepository = peerRepository;
-        this.campusRepository = campusRepository;
-        this.authService = authService;
-        this.webClient  = WebClient.builder()
-                .baseUrl("https://edu-api.21-school.ru/services/21-school/api/v1")
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + authService.getAccessToken())
-                .build();
+    private final static int MAX_SIZE_PAGES = 1000;
+    private final static int MAX_COUNT_PAGES = 100;
+
+    public void updateAllPeers() {
+        log.info("Начато обновление пиров...");
+        campusRepository.findAll().forEach(campus -> updatePeersByCampus(campus.getId()));
+        log.info("Обновление завершено.");
     }
 
-    public void updatePeers() {
-        log.info("Обновление пиров");
-        campusRepository.findAll().forEach(campus -> {
-            for (int page = 0; page < 1000; page++) {
-                try {
-                    List<String> peerNames = getPeersName(campus.getId(), 100, page).block();
-                    if (peerNames == null || peerNames.isEmpty()) {
-                        break;
-                    }
+    private void updatePeersByCampus(String campusId) {
+        for (int page = 0; page < MAX_COUNT_PAGES; page++) {
+            int offset = page * MAX_SIZE_PAGES;
+            List<String> names;
 
-                    List<Peer> peersToUpdate = peerNames.parallelStream()
-                            .map(name -> peerRepository.findByLogin(name).orElseGet(() -> new Peer(name)))
-                            .filter(this::updateInfo)
-                            .collect(Collectors.toList());
-
-                    peerRepository.saveAll(peersToUpdate);
-                    log.info("Обновлены {} пиров кампуса", peersToUpdate.size());
-
-                } catch (Exception e) {
-                    log.error("Ошибка при обновлении пиров кампуса {}: {}", campus.getShortName(), e.getMessage(), e);
-                }
+            try {
+                names = peerApiClient.fetchPeerNames(campusId, MAX_SIZE_PAGES, offset).block();
+            } catch (Exception e) {
+                log.error("Не удалось получить имена пиров кампуса {}: {}", campusId, e.getMessage(), e);
+                break;
             }
-        });
-        log.info("Обновление пиров завершено");
-    }
 
-    private Boolean updateInfo(Peer peer) {
-        if (peer == null) return false;
-        try {
-            Peer newPeer = getPeerByNameAsync(peer.getLogin()).block();
-            if (peer.equals(newPeer)) return false;
-            peer.setParallelName(newPeer.getParallelName());
-            peer.setClassName(newPeer.getClassName());
-            peer.setExpValue(newPeer.getExpValue());
-            peer.setLevel(newPeer.getLevel());
-            peer.setExpToNextLevel(newPeer.getExpToNextLevel());
-            peer.setStatus(newPeer.getStatus());
-            peer.setCampus(newPeer.getCampus());
-            log.info("Обновлена информация о пире: {}", peer);
-        } catch (Exception e) {
-            log.error("Ошибка при обновлении информации о пире: ", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR , "Ошибка при обновлении информации о пире: " + e.getMessage());
+            if (names == null || names.isEmpty()) break;
+
+            List<Peer> updatedPeers = names.parallelStream()
+                    .map(this::updateSinglePeer)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            peerRepository.saveAll(updatedPeers);
+            log.info("Кампус {}: обновлено {} пиров из {} со страницы {}", campusRepository.findById(campusId).get().getShortName(), updatedPeers.size(), names.size(), page);
         }
-        return true;
     }
 
-    private Mono<List<String>> getPeersName(String campusId, Integer size, Integer page) {
-        String uri = String.format("/campuses/%s/participants?limit=%d&offset=%d", campusId, size, page*size);
-        log.info("Запрос к API: {}", uri);
+    private Peer updateSinglePeer(String login) {
+        try {
+            Peer remotePeer = peerApiClient.fetchPeerByLogin(login).block();
+            if (remotePeer == null) return null;
 
-        return webClient.get()
-                .uri(uri)
-                .retrieve()
-                .onStatus(status -> !status.is2xxSuccessful(), clientResponse ->
-                        clientResponse.bodyToMono(String.class)
-                                .flatMap(body -> {
-                                    log.error("Ошибка получения списка пиров: {}", body);
-                                    return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Ошибка получения списка пиров: " +body));
-                                })
-                )
-                .bodyToMono(new ParameterizedTypeReference<Map<String, List<String>>>() {})
-                .map(responseMap -> {
-                    List<String> participants = responseMap.getOrDefault("participants", List.of());
-                    log.info("Получен список участников: {}", participants);
-                    return participants;
-                })
-                .doOnError(e -> log.error("Ошибка при получении списка пиров: ", e));
+            Peer localPeer = peerRepository.findByLogin(login).orElse(new Peer(login));
+
+            boolean changed = applyChangesIfNeeded(localPeer, remotePeer);
+            return changed ? localPeer : null;
+        } catch (Exception e) {
+            log.warn("Не удалось обновить пира {}: {}", login, e.getMessage());
+            return null;
+        }
     }
 
+    private boolean applyChangesIfNeeded(Peer target, Peer source) {
+        boolean changed = false;
 
-    private Mono<Peer> getPeerByNameAsync(String name) {
-        return webClient.get()
-                .uri("/participants/{name}", name)
-                .retrieve()
-                .bodyToMono(Peer.class)
-                .retryWhen(Retry.backoff(3, Duration.ofMillis(100)))
-                .doOnError(e -> log.error("Ошибка при получении информации о пире: ", e));
-    }
+        if (!Objects.equals(target.getLevel(), source.getLevel())) {
+            target.setLevel(source.getLevel());
+            log.info("Пир {} изменил уровень с {} на {}", target.getLogin(), target.getLevel(), source.getLevel());
+            changed = true;
+        }
+        if (!Objects.equals(target.getClassName(), source.getClassName())) {
+            target.setClassName(source.getClassName());
+            log.info("Пир {} изменил класс с {} на {}", target.getLogin(), target.getClassName(), source.getClassName());
+            changed = true;
+        }
+        if (!Objects.equals(target.getExpValue(), source.getExpValue())) {
+            target.setExpValue(source.getExpValue());
+            log.info("Пир {} изменил expValue с {} на {}", target.getLogin(), target.getExpValue(), source.getExpValue());
+            changed = true;
+        }
+        if (!Objects.equals(target.getStatus(), source.getStatus())) {
+            target.setStatus(source.getStatus());
+            log.info("Пир {} изменил status с {} на {}", target.getLogin(), target.getStatus(), source.getStatus());
+            changed = true;
+        }
+        if (!Objects.equals(target.getCampus(), source.getCampus())) {
+            target.setCampus(source.getCampus());
+            log.info("Пир {} изменил campus с {} на {}", target.getLogin(), target.getCampus(), source.getCampus());
+            changed = true;
+        }
 
-
-    public List<Peer> getPeers(String campusId, Integer size, Integer page, List<Status> statuses) {
-        Pageable pageable = PageRequest.of(page, size);
-
-        Page<Peer> peerPage = peerRepository.findByCampusIdAndStatusIn(campusId, statuses, pageable);
-
-        return peerPage.getContent();
-    }
-
-    public long getPeersCount(String campusId, List<Status> status) {
-        return peerRepository.countByCampusIdAndStatusIn(campusId, status);
+        return changed;
     }
 
     public PeerPageResponse searchPeers(PeerSearchRequest request) {

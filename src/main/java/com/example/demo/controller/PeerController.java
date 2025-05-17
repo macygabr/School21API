@@ -34,7 +34,7 @@ public class PeerController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        log.info("Received REST request: campusId={}, statuses={}, peerName={}, page={}, size={}",
+        log.info("Получение списка пиров: campusId={}, statuses={}, peerName={}, page={}, size={}",
                 campusId, statuses, peerName, page, size);
 
         PeerSearchRequest request = new PeerSearchRequest();
@@ -45,7 +45,6 @@ public class PeerController {
         request.setSize(size);
 
         PeerPageResponse response = peerService.searchPeers(request);
-
         return ResponseEntity.ok(response);
     }
 

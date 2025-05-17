@@ -34,7 +34,7 @@ public class CampusService {
 
             JsonNode rootNode = objectMapper.readTree(responseBody);
             JsonNode campusesNode = rootNode.get("campuses");
-            log.info("Start init campuses: {}", campusesNode);
+            log.info("Обновление кампусов: {}", campusesNode);
             if (campusesNode != null && campusesNode.isArray()) {
                 for (JsonNode campusNode : campusesNode) {
                     if (!campusRepository.existsById(campusNode.get("id").asText())) {
