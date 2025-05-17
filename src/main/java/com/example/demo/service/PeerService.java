@@ -13,8 +13,8 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -35,8 +35,10 @@ public class PeerService {
     private final CampusRepository campusRepository;
     private final PeerApiClient peerApiClient;
 
-    private final static int MAX_SIZE_PAGES = 100;
-    private final static int MAX_COUNT_PAGES = 1000;
+    @Value("${peer.page.size}")
+    private static int MAX_SIZE_PAGES;
+    @Value("${peer.max.pages}")
+    private static int MAX_COUNT_PAGES;
 
     @PostConstruct
     @Scheduled(cron = "0 0 0 * * *")
