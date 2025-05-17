@@ -30,7 +30,6 @@ public class CampusService {
         return campusRepository.findAll();
     }
 
-    @PostConstruct
     @Scheduled(cron = "0 0 0 * * *")
     public void runDailyTask() {
         updateCampuses();

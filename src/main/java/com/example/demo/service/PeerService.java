@@ -40,7 +40,6 @@ public class PeerService {
     @Value("${peer.max.pages}")
     private static int MAX_COUNT_PAGES;
 
-    @PostConstruct
     @Scheduled(cron = "0 0 0 * * *")
     public void runDailyTask() {
         updateAllPeers();
