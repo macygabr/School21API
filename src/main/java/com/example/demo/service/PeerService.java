@@ -35,8 +35,8 @@ public class PeerService {
     private final CampusRepository campusRepository;
     private final PeerApiClient peerApiClient;
 
-    private final static int MAX_SIZE_PAGES = 1000;
-    private final static int MAX_COUNT_PAGES = 100;
+    private final static int MAX_SIZE_PAGES = 100;
+    private final static int MAX_COUNT_PAGES = 1000;
 
     @PostConstruct
     @Scheduled(cron = "0 0 0 * * *")
