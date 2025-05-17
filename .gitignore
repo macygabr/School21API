@@ -41,8 +41,8 @@ gradle-app.setting
 .DS_Store
 
 ### My list ###
-resources
 logback-spring.xml
 node_modules/
 target
 logs
+src/main/resources/application.properties
