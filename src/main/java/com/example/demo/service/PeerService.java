@@ -85,31 +85,30 @@ public class PeerService {
         boolean changed = false;
 
         if (!Objects.equals(target.getLevel(), source.getLevel())) {
-            target.setLevel(source.getLevel());
             log.info("Пир {} изменил уровень с {} на {}", target.getLogin(), target.getLevel(), source.getLevel());
+            target.setLevel(source.getLevel());
             changed = true;
         }
         if (!Objects.equals(target.getClassName(), source.getClassName())) {
-            target.setClassName(source.getClassName());
             log.info("Пир {} изменил класс с {} на {}", target.getLogin(), target.getClassName(), source.getClassName());
+            target.setClassName(source.getClassName());
             changed = true;
         }
         if (!Objects.equals(target.getExpValue(), source.getExpValue())) {
-            target.setExpValue(source.getExpValue());
             log.info("Пир {} изменил expValue с {} на {}", target.getLogin(), target.getExpValue(), source.getExpValue());
+            target.setExpValue(source.getExpValue());
             changed = true;
         }
         if (!Objects.equals(target.getStatus(), source.getStatus())) {
-            target.setStatus(source.getStatus());
             log.info("Пир {} изменил status с {} на {}", target.getLogin(), target.getStatus(), source.getStatus());
+            target.setStatus(source.getStatus());
             changed = true;
         }
         if (!Objects.equals(target.getCampus(), source.getCampus())) {
-            target.setCampus(source.getCampus());
             log.info("Пир {} изменил campus с {} на {}", target.getLogin(), target.getCampus(), source.getCampus());
+            target.setCampus(source.getCampus());
             changed = true;
         }
-
         return changed;
     }
 
