@@ -124,33 +124,18 @@ public class PeerService {
 
     public PeerPageResponse searchPeers(PeerSearchRequest request) {
         log.info("Поиск пиров по запросу: {}", request);
+
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
 
-        // Создаем запрос для сущностей
+        // ===== Основной запрос =====
         CriteriaQuery<Peer> query = cb.createQuery(Peer.class);
         Root<Peer> root = query.from(Peer.class);
+        List<Predicate> predicates = buildPredicates(request, cb, root);
 
-        List<Predicate> predicates = new ArrayList<>();
+        query.select(root)
+                .where(cb.and(predicates.toArray(new Predicate[0])))
+                .orderBy(cb.asc(root.get("login")));
 
-        // campusId фильтр
-        if (request.getCampusId() != null && !request.getCampusId().isEmpty()) {
-            predicates.add(cb.equal(root.get("campus").get("id"), request.getCampusId()));
-        }
-
-        // statuses фильтр
-        if (request.getStatuses() != null && !request.getStatuses().isEmpty()) {
-            predicates.add(root.get("status").in(request.getStatuses()));
-        }
-
-        // peerName фильтр (поиск по части имени)
-        if (request.getPeerName() != null && !request.getPeerName().isEmpty()) {
-            predicates.add(cb.like(cb.lower(root.get("login")), "%" + request.getPeerName().toLowerCase() + "%"));
-        }
-
-        // применяем условия
-        query.where(cb.and(predicates.toArray(new Predicate[0])));
-
-        // пагинация
         int page = request.getPage();
         int size = request.getSize();
 
@@ -159,29 +144,38 @@ public class PeerService {
                 .setMaxResults(size)
                 .getResultList();
 
-        // Запрос на подсчет общего количества подходящих записей
+        // ===== Подсчет общего количества =====
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<Peer> countRoot = countQuery.from(Peer.class);
+        List<Predicate> countPredicates = buildPredicates(request, cb, countRoot);
 
-        List<Predicate> countPredicates = new ArrayList<>();
+        countQuery.select(cb.count(countRoot))
+                .where(cb.and(countPredicates.toArray(new Predicate[0])));
 
-        // Копируем условия для count-запроса
-        if (request.getCampusId() != null && !request.getCampusId().isEmpty()) {
-            countPredicates.add(cb.equal(countRoot.get("campus").get("id"), request.getCampusId()));
-        }
-        if (request.getStatuses() != null && !request.getStatuses().isEmpty()) {
-            countPredicates.add(countRoot.get("status").in(request.getStatuses()));
-        }
-        if (request.getPeerName() != null && !request.getPeerName().isEmpty()) {
-            countPredicates.add(cb.like(cb.lower(countRoot.get("login")), "%" + request.getPeerName().toLowerCase() + "%"));
-        }
-
-        countQuery.select(cb.count(countRoot)).where(cb.and(countPredicates.toArray(new Predicate[0])));
         long total = entityManager.createQuery(countQuery).getSingleResult();
 
-        log.info("Найдено {} записей", total);
-
-        // Возвращаем наш PeerPageResponse
+        log.info("Найдено {} записей", total);
         return new PeerPageResponse(total, size, peers);
+    }
+
+    private List<Predicate> buildPredicates(PeerSearchRequest request, CriteriaBuilder cb, Root<Peer> root) {
+        List<Predicate> predicates = new ArrayList<>();
+
+        if (request.getCampusId() != null && !request.getCampusId().isEmpty()) {
+            predicates.add(cb.equal(root.get("campus").get("id"), request.getCampusId()));
+        }
+        if (request.getStatuses() != null && !request.getStatuses().isEmpty()) {
+            predicates.add(root.get("status").in(request.getStatuses()));
+        }
+        if (request.getPeerName() != null && !request.getPeerName().isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("login")), "%" + request.getPeerName().toLowerCase() + "%"));
+        }
+
+        return predicates;
+    }
+
+
+    public Long countPeers(PeerSearchRequest request) {
+        return searchPeers(request).getTotal();
     }
 }
