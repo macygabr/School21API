@@ -3,15 +3,12 @@ package com.example.demo.service;
 import com.example.demo.models.dto.Peer;
 import com.example.demo.models.http.PeerPageResponse;
 import com.example.demo.models.http.PeerSearchRequest;
+import com.example.demo.models.http.SortField;
 import com.example.demo.repository.CampusRepository;
 import com.example.demo.repository.PeerRepository;
-import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -136,6 +133,30 @@ public class PeerService {
                 .where(cb.and(predicates.toArray(new Predicate[0])))
                 .orderBy(cb.asc(root.get("login")));
 
+        // ===== Сортировка =====
+        if (request.getSortField() != null) {
+            String field = request.getSortField().getField();
+            String order = request.getSortField().getOrder();
+
+            try {
+                Path<?> path;
+                if ("level".equals(field)) {
+                    path = root.get("level");
+                } else {
+                    path = root.get(field);
+                }
+
+                if ("desc".equalsIgnoreCase(order)) {
+                    query.orderBy(cb.desc(path));
+                } else {
+                    query.orderBy(cb.asc(path));
+                }
+            } catch (IllegalArgumentException e) {
+                log.warn("Невалидное поле сортировки: {}", field);
+            }
+        }
+
+
         int page = request.getPage();
         int size = request.getSize();
 
@@ -166,6 +187,9 @@ public class PeerService {
         }
         if (request.getStatuses() != null && !request.getStatuses().isEmpty()) {
             predicates.add(root.get("status").in(request.getStatuses()));
+        }
+        if(request.getParallelName() != null && !request.getParallelName().isEmpty()) {
+            predicates.add(cb.equal(root.get("parallelName"), request.getParallelName()));
         }
         if (request.getPeerName() != null && !request.getPeerName().isEmpty()) {
             predicates.add(cb.like(cb.lower(root.get("login")), "%" + request.getPeerName().toLowerCase() + "%"));

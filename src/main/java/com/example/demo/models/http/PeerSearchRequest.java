@@ -11,6 +11,8 @@ public class PeerSearchRequest  {
     private String campusId;
     private List<Status> statuses;
     private String peerName;
+    private String parallelName;
+    private SortField sortField;
     private int page;
     private int size;
 
@@ -21,6 +23,8 @@ public class PeerSearchRequest  {
             this.campusId = peerSearchRequest.getCampusId();
             this.statuses = peerSearchRequest.getStatuses();
             this.peerName = peerSearchRequest.getPeerName();
+            this.sortField = peerSearchRequest.getSortField();
+            this.parallelName = peerSearchRequest.getParallelName();
             this.page = peerSearchRequest.getPage();
             this.size = peerSearchRequest.getSize();
             return this;
@@ -30,3 +34,5 @@ public class PeerSearchRequest  {
         return null;
     }
 }
+
+
